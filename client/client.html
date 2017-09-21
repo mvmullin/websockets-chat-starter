@@ -10,7 +10,74 @@
          online at your node.js address under /socket.io/socket.io.js 
          You can disable that on the server if desired
     -->
+		<script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+		<script type = "text/babel">
+			const connectSocket = (e) => {
+				const message = document.querySelector("#message");
+				const chat = document.querySelector("#chat");
+				const socket = io.connect(); // io is a global from socket.io
+				
+				// On connect, join room
+				socket.on('connect', () => {
+					console.log('connecting');
+					
+					let user = getUser();
+					
+					socket.emit('join', { name: user});
+					
+					// send message to server on click
+					document.querySelector("#send").addEventListener('click', () => {
+            if(message.value.localeCompare("/roll") == 0)
+            {
+              socket.emit('roll');
+            } else {
+              socket.emit('msgToServer', { msg: message.value });
+            }
+						
+					});
+					
+					// send new name to server on click
+					document.querySelector("#change").addEventListener('click', () => {
+						let user = getUser();
+						socket.emit('changeName', { name: user });
+					});
+					
+					// send private message to server on click
+					document.querySelector("#whisper").addEventListener('click', () => {
+						let buddy = document.querySelector("#buddyname").value;
+					
+						if(!buddy) {
+							buddy = 'unknown';
+						}
+						
+						socket.emit('whisperToServer', { name: buddy, msg: message.value });
+					});
+				});
+				
+				// On msg, print data
+				socket.on('msg', (data) => {
+					chat.value +=  "\n" + data.name + ": " + data.msg; // add data to chat box
+				});	
+			};
+
+			const init = () => {
+				// add connect function to button click, and call function on click
+				const connect = document.querySelector("#connect");
+				connect.addEventListener('click', connectSocket);
+			};
+
+			const getUser = () => {
+				let user = document.querySelector("#username").value;
+					
+					if(!user) {
+						user = 'unknown';
+					}
+				return user;
+			};
+
+			window.onload = init;
+		</script>
 	<style>
 		textarea {
 			display: block;
@@ -22,10 +89,15 @@
 	<label for="user">Username:</label>
 	<input id="username" name="user" type="text"/>
 	<input id="connect" type='button' value='connect'/>
+	<input id="change" type='button' value='change name'/>
+	<br/>
+	<label for="buddy">Whisper to:</label>
+	<input id="buddyname" name="buddy" type="text"/>
 	<br/>
 	<label for="message">Message:</label>
 	<input id="message" name="message" type="text"/>
 	<input id="send" type="button" value="send" />
+	<input id="whisper" type="button" value="whisper" />
 	
 	<textarea id="chat" rows="20" cols="40" readonly> </textarea>
 </body>
